@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración | Gestion Commerciale Pro</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <style>
+    .admin-simple{max-width:1100px;margin:34px auto;padding:0 18px}
+    .admin-top{position:sticky;top:0;z-index:20}
+    .admin-nav-toggle{display:none;border:1px solid #dce4ee;background:#fff;border-radius:8px;padding:9px 12px;font-weight:700;color:#172b45;cursor:pointer}
+    .admin-menu-backdrop{display:none}
+    .dashboard-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:0 0 16px}
+    .dashboard-head h1{margin:0 0 5px;font-size:clamp(22px,3vw,30px)}
+    .dashboard-head p{margin:0}
+    .dashboard-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px}
+    .stat-card{background:#fff;border:1px solid #e2e9f1;border-radius:13px;padding:17px;min-width:0}
+    .stat-card span{display:block;color:#64748b;font-size:13px;font-weight:600}
+    .stat-card strong{display:block;font-size:clamp(24px,4vw,32px);margin-top:8px;color:#102d50}
+    .stat-card.warning strong{color:#b45309}
+    .stat-foot{font-size:12px;color:#718096;margin-top:5px}
+    .admin-menu-open{display:flex!important}
+    .simple-form{max-width:720px;margin:0 auto 28px}
+    .simple-form h1{margin-top:0}
+    .simple-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .simple-grid label{display:flex;flex-direction:column;gap:7px;font-weight:600}
+    .simple-grid input{width:100%;box-sizing:border-box}
+    .simple-grid .wide{grid-column:1/-1}
+    .simple-help{margin:12px 0;color:#64748b;font-size:.92rem;line-height:1.5}
+    .simple-form button{margin-top:16px}
+    .simple-table{width:100%;border-collapse:collapse}
+    .simple-table th,.simple-table td{padding:12px;text-align:left;border-bottom:1px solid #e5eaf2}
+    /* Menú lateral para móvil y tablet; en escritorio se conserva la navegación normal. */
+    @media(max-width:900px){
+      .admin-top{height:auto;min-height:66px;flex-direction:row;align-items:center;flex-wrap:nowrap;padding:10px 16px;gap:12px;z-index:40}
+      .admin-nav-toggle{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto}
+      .admin-top nav{display:flex;position:fixed;top:0;right:0;bottom:0;width:min(82vw,320px);height:100dvh;padding:86px 22px 24px;background:#fff;box-shadow:-12px 0 35px rgba(16,45,80,.16);flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;z-index:42;transform:translateX(105%);visibility:hidden;transition:transform .25s ease,visibility .25s ease}
+      .admin-top nav.admin-menu-open{display:flex!important;transform:translateX(0);visibility:visible}
+      .admin-top nav a,.admin-top nav button{display:block;width:100%;padding:13px 12px;text-align:left;border:0;border-radius:8px;background:#f5f8fc;color:#172b45;text-decoration:none;font:inherit;cursor:pointer}
+      .admin-menu-backdrop{display:block;position:fixed;inset:0;background:rgba(10,25,45,.42);opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease;z-index:39}
+      .admin-menu-backdrop.is-visible{opacity:1;visibility:visible}
+      body.admin-menu-lock{overflow:hidden}
+      .dashboard-stats{grid-template-columns:1fr 1fr}
+      .dashboard-head{align-items:flex-start;flex-direction:column}
+    }
+    @media(max-width:767px){
+      .admin-top{min-height:66px}
+      .dashboard-stats{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:480px){.simple-grid{grid-template-columns:1fr}.simple-grid .wide{grid-column:auto}.simple-table{font-size:.88rem}.dashboard-stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header class="top admin-top">
+  <a class="brand" href="index.html"><b class="logo">GC</b> Gestion Commerciale Pro</a>
+  <button id="admin-nav-toggle" class="admin-nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Abrir menú">☰ Menú</button>
+  <nav id="admin-nav" aria-hidden="true"><a href="index.html">Ver catálogo</a><button id="logout" type="button" hidden>Cerrar sesión</button></nav>
+</header>
+<div id="admin-menu-backdrop" class="admin-menu-backdrop" aria-hidden="true"></div>
+<main class="admin-simple">
+  <section id="login" class="panel login">
+    <h1>Acceso administrador</h1>
+    <form id="login-form">
+      <label>Email<input name="email" type="email" autocomplete="username" required></label>
+      <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Entrar</button>
+      <p id="login-msg" class="muted" role="status"></p>
+    </form>
+  </section>
+
+  <section id="dashboard" hidden>
+    <div class="dashboard-head">
+      <div><h1>Resumen</h1><p class="muted">Información actual de tus productos y existencias.</p></div>
+      <p id="dashboard-updated" class="muted" aria-live="polite">Cargando datos…</p>
+    </div>
+    <section class="dashboard-stats" aria-label="Resumen del inventario">
+      <article class="stat-card"><span>Productos activos</span><strong id="stat-products">—</strong><div class="stat-foot">Productos del catálogo</div></article>
+      <article class="stat-card"><span>Stock disponible</span><strong id="stat-stock">—</strong><div class="stat-foot">Unidades no caducadas</div></article>
+      <article class="stat-card warning"><span>Lotes próximos a caducar</span><strong id="stat-expiring">—</strong><div class="stat-foot">Durante los próximos 30 días</div></article>
+    </section>
+    <form id="product-form" class="panel simple-form">
+      <h1>Añadir producto</h1>
+      <p class="simple-help">Rellena los datos básicos y pulsa Guardar. La referencia y el lote se crean automáticamente.</p>
+      <div class="simple-grid">
+        <label class="wide">Nombre del producto
+          <input name="name" maxlength="120" placeholder="Ej. FARID" required>
+        </label>
+        <label>Precio (€)
+          <input name="price" type="number" min="0.01" step="0.01" placeholder="Ej. 12" required>
+        </label>
+        <label>Descuento (%) <span class="muted">Opcional</span>
+          <input name="discount" type="number" min="0" max="100" step="1" value="0" placeholder="0">
+        </label>
+        <label>Fecha de producción
+          <input name="productionDate" type="date" required>
+        </label>
+        <label>Fecha de caducidad
+          <input name="expiryDate" type="date" required>
+        </label>
+        <label>Cantidad disponible
+          <input name="quantity" type="number" min="1" step="1" placeholder="Ej. 20" required>
+        </label>
+        <label class="wide">Foto del producto <span class="muted">Opcional</span>
+          <input id="product-image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+        </label>
+      </div>
+      <img id="image-preview" alt="Vista previa" hidden style="max-width:180px;max-height:150px;object-fit:contain;margin-top:12px;border-radius:10px">
+      <p class="simple-help">La cantidad es necesaria para calcular el stock. Si no añades una foto, el producto se guardará igualmente.</p>
+      <button class="btn" type="submit">Guardar producto</button>
+      <p id="product-msg" class="muted" role="status"></p>
+    </form>
+
+    <section class="panel">
+      <h2>Mis productos</h2>
+      <div class="scroll">
+        <table class="simple-table">
+          <thead><tr><th>Producto</th><th>Precio</th><th>Descuento</th><th>Stock</th></tr></thead>
+          <tbody id="inventory"></tbody>
+        </table>
+      </div>
+      <p id="inventory-msg" class="muted" role="status"></p>
+    </section>
+  </section>
+</main>
+<footer>Gestion Commerciale Pro · Panel privado</footer>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
